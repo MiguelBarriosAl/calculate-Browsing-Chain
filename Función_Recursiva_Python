@@ -1,0 +1,106 @@
+import pandas as pd
+import numpy as np
+import csv
+import sys
+import gzip
+from collections import defaultdict
+
+#### 1. RECURSIVE FUNCTION OF PYTHON CHALLENGE
+
+def python_Challenge(status, depth):
+   
+    list_Status = [] # Array total chain
+    list_Prob = [] # Array total probability
+    list_Dest = [] # Array of destinations
+
+    global n # Number of position
+    global r # Number of recursion
+    global t # Number iteration toCsv
+
+    r = r + 1 
+    if depth != 0 and depth <= 8 and  n <= depth:
+
+        #EXTRACT THE STATUS ACCORDING TO THE USER INPUT
+        for row in navegate_Dict:
+            if status == row['SOURCE']:
+
+                # LIST OF DESTINATIONS
+                destiny =  row['DESTINATION']
+                list_Dest.append(destiny)
+                list_Dest = list_Dest[:depth]
+
+                # LIST OF ACCUMULATED PROBABILITY
+                probability = row['PROB']
+                list_Prob = [probability] + list_Prob
+
+            # INSERT FIRST POSITION THE STATUS USER INPUT
+            if status not in list_Status:
+                list_Status.insert(0, status)
+                
+        # RECURSIVE FUNCTION
+        for i in list_Dest:
+            if n < depth:
+                i = list_Dest[n] 
+                firstList_Dest = list_Dest 
+                nextState = int(i[-1])
+                probTotal = np.prod(list_Prob[:n+1])
+                list_Status.append(nextState)
+                list_Status.append(probTotal)
+                print(list_Status)
+
+                # CURRENT SESSION TO CSV
+                dataframe_1 = pd.DataFrame(list_Status)
+                dataframe_1.to_csv(pathToCsv, compression='gzip', index=False, sep=';', mode = 'a', header = False)
+
+                list_Status = list_Status[:-1]
+                status = (i[-3:])
+
+                if r <= depth:
+                    r = r + 1
+                    t = 0
+                    python_Challenge(status, depth)
+                else:
+                    n = n + 1
+                    r = 0
+                    t = 0
+                    list_Dest = firstList_Dest
+
+#### 2. CODE USER INPUT
+
+if len(sys.argv) == 4 and str(sys.argv[1]) and str(sys.argv[2]) and str(sys.argv[3]):
+	n = 1
+	user_Parameter = []
+	for parameter in sys.argv:
+		session = parameter.split('=')
+		user_Parameter.append(session)
+else:
+
+    print("\n\n\nERROR - INTRODUCE LOS PARAMETROS CORRECTAMENTE")
+    print('Ejemplo: /calculate-browsing-chain.py current-session="0,2" browsing-depth=10 output=../data/out/output.file.csv.gz\n\n\n')
+
+values = {}
+list_Values = []
+for parameter in user_Parameter[1:]:
+	term = parameter[0]
+	value = parameter[1]
+	values[term]=(value)
+	list_Values.append(value)
+
+status = list_Values[0]
+depth = int(list_Values[1])
+pathToCsv = list_Values[2]
+
+### 3. DATA .CSV TO DICTIONARY
+
+path = "~/model.transitions.csv"
+df = pd.read_csv(path, delimiter=';')
+df = df.sort_values('SOURCE')
+navegate_Dict = df.to_dict(orient='index').values()
+
+
+########################################################################
+
+n = 0 # Number of position
+r = 0 # Number of Recursion
+t = 0 # Number iteration toCsv
+python_Challenge(status,depth)
